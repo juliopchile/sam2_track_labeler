@@ -1,6 +1,7 @@
 from video_frame_viewer import VideoFrameViewer
 import torch
 
+
 if torch.cuda.is_available():
     device = torch.device("cuda")
 elif torch.backends.mps.is_available():
@@ -22,6 +23,7 @@ elif device.type == "mps":
         "give numerically different outputs and sometimes degraded performance on MPS. "
         "See e.g. https://github.com/pytorch/pytorch/issues/84936 for a discussion."
     )
+
 
 if __name__ == "__main__":
     # Directory containing the JPEG frames
