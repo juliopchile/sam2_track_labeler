@@ -1,5 +1,6 @@
-from video_frame_viewer import VideoFrameViewer
 import torch
+from manager import Manager
+from config import *
 
 
 if torch.cuda.is_available():
@@ -27,10 +28,10 @@ elif device.type == "mps":
 
 if __name__ == "__main__":
     # Directory containing the JPEG frames
-    video_dir = "/home/asdasd/sam2_track_labeler/videos/SHORT_INCREDIBLE_salmon_run_Underwater_footage_100"
-    save_dir = "/home/asdasd/sam2_track_labeler/dataset"
+    video_path = VIDEO_PATH_AS_JPEG
+    save_path = SAVE_PATH_FOR_VIEWER
+    batch_size = BATCH_SIZE
 
-    viewer = VideoFrameViewer(video_dir, save_dir, device)
-    viewer.build_sam2_model()
-    viewer.run()
+    manager = Manager(video_path, save_path, batch_size, device)
+    manager.start()
     

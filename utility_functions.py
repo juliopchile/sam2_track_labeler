@@ -1,6 +1,7 @@
 import numpy as np
 import cv2
 
+
 # If video False then masks are handled correctly
 # Masks are given by the image predictor (for example)
 # masks, scores, logits = predictor.predict(
@@ -27,34 +28,28 @@ import cv2
 # 
 # This logits are the one the function receives and are an array of False and True values but need to be converted
 # to ones and zeros to be managed
-
-
-def draw_masks_on_image(image, masks, obj_idxs, random_color=False, borders=True, video=True):
+def draw_masks_on_image(image, masks, obj_idxs, random_color=False, borders=True, video=True, text=True):
     """
     Draws masks onto the image.
-
     Parameters:
         image (numpy.ndarray): The original image in RGB format. Shape: (H, W, 3).
         masks (numpy.ndarray): The masks to draw. Shape: (num_masks, batch=1, H, W).
         random_color (bool): If True, use random colors for each mask. Otherwise, use a fixed color.
         borders (bool): If True, draw borders around the masks.
-
     Returns:
         numpy.ndarray: The image with masks drawn, in RGB format.
     """
     # Make a copy of the image to avoid modifying the original
     output_image = image.copy()
     height, width, _ = output_image.shape
-
     # Ensure the image is in float format for blending
     output_image = output_image.astype(np.float32)
     if video:
         masks = (masks > 0.0).cpu().numpy().astype(np.uint8).astype(np.float32)
-    
+   
     for mask, idx in zip(masks, obj_idxs):
         # Remove the batch dimension
         mask = mask.squeeze(0)  # Now shape: (H, W)
-
         # Define the color for the mask
         if random_color:
             # Generate a random color
@@ -62,37 +57,57 @@ def draw_masks_on_image(image, masks, obj_idxs, random_color=False, borders=True
         else:
             # Use a unique color per ID
             color = np.array([idx * 37 % 256, idx * 67 % 256, idx * 97 % 256], dtype=np.uint8)
-
         # Define the transparency factor
         alpha = 0.6
-
         # Create a colored version of the mask
         colored_mask = np.zeros((height, width, 3), dtype=np.uint8)
         colored_mask[mask == 1] = color
-
         # Blend the colored mask with the original image
         # Identify the regions where the mask is applied
         mask_indices = mask == 1
         mask_indices_3d = np.repeat(mask_indices[:, :, np.newaxis], 3, axis=2)
-
         # Apply blending
         output_image[mask_indices_3d] = (alpha * colored_mask[mask_indices_3d] + (1 - alpha) * output_image[mask_indices_3d])
-
         if borders:
             # Find contours in the mask
             mask_uint8 = (mask * 255).astype(np.uint8)
             contours, _ = cv2.findContours(mask_uint8, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-
             # Smooth the contours
             smoothed_contours = [cv2.approxPolyDP(contour, epsilon=0.01, closed=True) for contour in contours]
-
             # Draw the contours on the image
             cv2.drawContours(output_image, smoothed_contours, -1, (255, 255, 255), thickness=2)
 
+        # Calculate the centroid of the mask using image moments
+        if text:
+            centroid = calculate_centroid(mask_uint8)
+            if centroid:
+                cX, cY = centroid
+                # Add text (ID) at the centroid of the mask
+                cv2.putText(output_image, str(idx), (cX, cY), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2)
+
     # Convert the image back to uint8 format
     output_image = np.clip(output_image, 0, 255).astype(np.uint8)
-
     return output_image
+
+
+def calculate_centroid(mask):
+    """Calcula el centroide de una máscara binaria.
+    
+    Parameters:
+        mask (numpy.ndarray): Máscara binaria 2D de la que se calculará el centroide.
+    
+    Returns:
+        (int, int): Coordenadas del centroide (cX, cY).
+    """
+    M = cv2.moments(mask)
+    if M["m00"] != 0:
+        cX = int(M["m10"] / M["m00"])
+        cY = int(M["m01"] / M["m00"])
+        return cX, cY
+    else:
+        return None  # Si el área es cero, no hay centroide.
+    
+
 
 def draw_points(image, coords, labels, marker_size=15):
     output_image = image.copy()
@@ -100,6 +115,7 @@ def draw_points(image, coords, labels, marker_size=15):
         color = (0, 255, 0) if label == 1 else (0, 0, 255)
         cv2.drawMarker(output_image, tuple(coord), color, markerType=cv2.MARKER_STAR, markerSize=marker_size, thickness=2, line_type=cv2.LINE_AA)
     return output_image
+
 
 def draw_boxes(image, boxes, line_color=(0, 255, 0)):
     """

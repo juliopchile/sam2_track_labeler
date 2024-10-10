@@ -1,4 +1,5 @@
 import os
+import shutil
 import cv2
 import numpy as np
 
@@ -41,16 +42,18 @@ def recorrer_dataset(dataset_path="dataset"):
     labels_dir = os.path.join(dataset_path, 'labels')
     os.makedirs(labels_dir, exist_ok=True)
 
+    # Recorrer cada carpeta con nombre 0, 1, 2, 3, ..., nth class
     for class_index in os.listdir(dataset_path):
         class_path = os.path.join(dataset_path, class_index)
         if not os.path.isdir(class_path) or class_index == 'labels':
             continue
 
+        # Recorrer cada máscara de cada frame asociado a esa clase
         for frame_mask in os.listdir(class_path):
             frame, extension = os.path.splitext(frame_mask)
             if extension.lower() != '.png':
                 continue
-            
+
             mask_path = os.path.join(class_path, frame_mask)
             polygons = mask2poly(mask_path)
 
@@ -92,9 +95,39 @@ def visualize_masks(image_path, mask_labels):
     cv2.destroyAllWindows()
 
 
-if __name__ == "__main__":
-    recorrer_dataset("dataset/SHORT_INCREDIBLE_salmon_run_Underwater_footage_100")
-    mask_labels = "dataset/SHORT_INCREDIBLE_salmon_run_Underwater_footage_100/labels/00050.txt" 
-    image = "videos/SHORT_INCREDIBLE_salmon_run_Underwater_footage_100/00050.jpg"
+def combine_batches(input_directory, output_directory):
+    # Lista de batches ordenada
+    batches = sorted([d for d in os.listdir(input_directory) if os.path.isdir(os.path.join(input_directory, d))])
     
-    visualize_masks(image, mask_labels)
+    for batch in batches:
+        batch_path = os.path.join(input_directory, batch)
+        
+        # Lista de clases dentro de cada batch, ordenada
+        classes = sorted([d for d in os.listdir(batch_path) if os.path.isdir(os.path.join(batch_path, d))])
+        
+        for class_name in classes:
+            class_path = os.path.join(batch_path, class_name)
+            output_class_path = os.path.join(output_directory, class_name)
+            
+            # Crear la carpeta de clase en el directorio de salida si no existe
+            if not os.path.exists(output_class_path):
+                os.makedirs(output_class_path)
+            
+            # Lista de imágenes dentro de la clase
+            images = sorted(os.listdir(class_path))
+            
+            for image in images:
+                source_image_path = os.path.join(class_path, image)
+                destination_image_path = os.path.join(output_class_path, image)
+                
+                # Copy files only if they don't exist in the destination directory
+                if not os.path.exists(destination_image_path):
+                    shutil.copy2(source_image_path, destination_image_path)
+
+if __name__ == "__main__":
+    masks_batches_path = "saves/SHORT_azul_mask"
+    masks_save_path = "dataset/SHORT_azul"
+    
+    combine_batches(masks_batches_path, masks_save_path)
+    recorrer_dataset(masks_save_path)
+    
