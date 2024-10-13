@@ -42,5 +42,5 @@ if __name__ == "__main__":
     # Example usage:
     directory_path = 'videos'  # Path to the directory containing videos
     max_frames = 100  # Optional: specify the maximum number of frames to extract
-    extract_frames_for_all_videos(directory_path, max_frames=max_frames)
+    #extract_frames_for_all_videos(directory_path, max_frames=max_frames)
     extract_frames_for_all_videos(directory_path)

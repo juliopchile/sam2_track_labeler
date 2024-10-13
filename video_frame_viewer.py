@@ -108,14 +108,19 @@ class VideoFrameViewer:
                 self.display_frame()
             elif key == ord('s'):  # Guardar máscaras
                 self.segmenter.save_masks(offset=self.first_frame)
+                print("Masks Saved")
             elif key == ord('a'):  # 'a' for adding a new object
                 self.add_item()
+                print(f"Objects ID: {self.items_id}")
             elif key == ord('d'):  # 'd' for deleting the last object
                 self.pop_item()
+                print(f"Objects ID: {self.items_id}")
             elif key == ord('j'):  # 'j' for moving to previous object id
                 self.prev_item()
+                print(f"Current ID: {self.current_idx}")
             elif key == ord('k'):  # 'k' for moving to next object id
                 self.next_item()
+                print(f"Current ID: {self.current_idx}")
         cv2.destroyAllWindows()
         return return_sate
 
@@ -125,7 +130,6 @@ class VideoFrameViewer:
             self.current_idx = 0
         else:
             self.current_idx = (self.current_idx - 1) % n
-        print(f"current_idx: {self.current_idx}")
     
     def next_item(self):
         n = len(self.items_id)
@@ -133,11 +137,9 @@ class VideoFrameViewer:
             self.current_idx = 0
         else:
             self.current_idx = (self.current_idx + 1) % n
-        print(f"current_idx: {self.current_idx}")
-
+        
     def add_item(self):
         self.items_id.append(len(self.items_id))
-        print(f"Objects ID: {self.items_id}")
 
     def pop_item(self):
         if len(self.items_id) != 0:

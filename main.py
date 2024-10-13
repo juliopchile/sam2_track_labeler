@@ -1,4 +1,5 @@
 import torch
+from masks_to_points import combine_batches, recorrer_dataset, filtrar_dataset
 from manager import Manager
 from config import *
 
@@ -27,11 +28,21 @@ elif device.type == "mps":
 
 
 if __name__ == "__main__":
-    # Directory containing the JPEG frames
-    video_path = VIDEO_PATH_AS_JPEG
+    #? Utilizar manager para visualizar el dataset y segmentarlo
+    video_path = os.path.join(VIDEOS_PATH, VIDEO_NAME)
     save_path = SAVE_PATH_FOR_VIEWER
     batch_size = BATCH_SIZE
-
-    manager = Manager(video_path, save_path, batch_size, device)
-    manager.start()
+    #manager = Manager(video_path, save_path, batch_size, device)
+    #manager.start()
+    #del manager
     
+    #? Combinar los batches de mascaras y convertirlas a poligonos en un dataset formato YOLO-seg
+    masks_batches_path = MASK_BATCHES_PATH
+    masks_save_path = os.path.join(DATASET_PATH, VIDEO_NAME)
+    #combine_batches(masks_batches_path, masks_save_path)
+    #recorrer_dataset(masks_save_path)
+    
+    # ? Filtrar el dataset para eliminar máscaras pequeñas (artefactos)
+    original_labels = os.path.join(masks_save_path, "labels")
+    filtered_labels = os.path.join(masks_save_path, "labeles_filtered")
+    filtrar_dataset(original_labels, filtered_labels, video_path, 1024)
